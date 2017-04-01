@@ -1,0 +1,7 @@
+add_library(vorolibrary STATIC IMPORTED)
+set_target_properties(vorolibrary PROPERTIES IMPORTED_LOCATION ${SE_api_SOURCE_DIR}/voro++-0.4.6/src/libvoro++.a)
+include_directories(${SE_api_SOURCE_DIR}/voro++-0.4.6/src)
+set (CMAKE_CXX_FLAGS "-O3")
+file (GLOB _sources *.c*)
+add_executable(SE_api ${_sources})
+target_link_libraries(SE_api vorolibrary)
