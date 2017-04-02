@@ -5,9 +5,10 @@
 #include <string>
 using namespace std;
 
-static int sgn(int a) {
-		return a>=0 ? 1 : -1;
-	}
+static int sgn (int a)
+{
+	return a >= 0 ? 1 : -1;
+}
 
 enum Wrapping {plus = 0, minus = 1, asterix = 2};
 enum Coor {x, y, z};
@@ -23,7 +24,7 @@ public:
 		this->x = Wrapping::asterix;
 		this->y = Wrapping::asterix;
 		this->z = Wrapping::asterix;
-		}
+	}
 	inline WrappingCont (Wrapping x, Wrapping y, Wrapping z) {
 		this->x = x;
 		this->y = y;
@@ -58,13 +59,13 @@ public:
 		}
 	}
 	inline bool IsWrapping() {
-			if (this->x!=Wrapping::asterix)
-				return true;
-			if (this->y!=Wrapping::asterix)
-				return true;
-			if (this->z!=Wrapping::asterix)
-				return true;
-			return false;				
+		if (this->x != Wrapping::asterix)
+			return true;
+		if (this->y != Wrapping::asterix)
+			return true;
+		if (this->z != Wrapping::asterix)
+			return true;
+		return false;
 	}
 	inline bool Equal (WrappingCont &wc) {
 		if (wc.x == x && wc.y == y && wc.z == z) return true;
@@ -85,23 +86,23 @@ public:
 		}
 	}
 	inline void UpdateCont (WrappingCont &wc) {
-		this->x = MergeWrap(x,wc.x);
-		this->y = MergeWrap(y,wc.y);
-		this->z = MergeWrap(z,wc.z);
+		this->x = MergeWrap (x, wc.x);
+		this->y = MergeWrap (y, wc.y);
+		this->z = MergeWrap (z, wc.z);
 	}
-	
-	inline Wrapping MergeWrap(Wrapping &a,Wrapping &b) {
-		int sa=GetSign(a);
-		int sb=GetSign(b);
-		if (sa==0)
+
+	inline Wrapping MergeWrap (Wrapping &a, Wrapping &b) {
+		int sa = GetSign (a);
+		int sb = GetSign (b);
+		if (sa == 0)
 			return b;
-		if (sb==0)
+		if (sb == 0)
 			return a;
-		if (sa*sb>0)
+		if (sa * sb > 0)
 			return a;
-		return Wrapping::asterix;		
+		return Wrapping::asterix;
 	}
-	
+
 };
 
 class Vertex
@@ -110,7 +111,7 @@ public:
 	double X;
 	double Y;
 	double Z;
-	int id=0;
+	int id = 0;
 	//vector<int> mapRaw;
 	inline Vertex (double x, double y, double z) {
 		this->X = x;
@@ -118,10 +119,10 @@ public:
 		this->Z = z;
 	}
 	inline vector<double> GetPos() {
-		vector<double> v(3,0.0);
-		v[0]=this->X;
-		v[1]=this->Y;
-		v[2]=this->Z;
+		vector<double> v (3, 0.0);
+		v[0] = this->X;
+		v[1] = this->Y;
+		v[2] = this->Z;
 		return v;
 	}
 };
@@ -131,7 +132,7 @@ class Edge
 public:
 	int V0;
 	int V1;
-	int id=0;
+	int id = 0;
 	vector<int> surfaceList;
 	//vector<int> mapRaw;
 	WrappingCont wrappingCont;
@@ -157,16 +158,16 @@ public:
 class Surface
 {
 public:
-	int id=0;
+	int id = 0;
 	vector<int> edgeList;
 	vector<int> mapRaw;
 	inline Surface (vector<string> &data, vector<int> &edgeListMap) {
 		edgeList.reserve (data.size() - 2);
 		for (int i = 2; i < data.size(); i++) {
 			int edge = stoi (data[i]);
-			if (abs(edge)>edgeListMap.size())
-				throw out_of_range("Index out of range in Line loop section");
-			edgeList.push_back (sgn(edge)*edgeListMap[abs(edge) - 1]);
+			if (abs (edge) > edgeListMap.size())
+				throw out_of_range ("Index out of range in Line loop section");
+			edgeList.push_back (sgn (edge) *edgeListMap[abs (edge) - 1]);
 		}
 	}
 	inline Surface (vector<string> &data) {
@@ -174,44 +175,44 @@ public:
 		for (int i = 2; i < data.size(); i++) {
 			int edge = stoi (data[i]);
 			edgeList.push_back (edge);
-		}	
+		}
 	}
 	inline Surface (int size) {
 		edgeList.reserve (size);
 	}
-	inline bool RepairIds(vector<Edge> &data) {
-			int oldId;
-			for (int i=0;i<edgeList.size();i++) {
-				oldId=edgeList[i];
-				edgeList[i]=sgn(oldId)*data[abs(oldId)-1].id;
-			}
-			return true;
-	}
-	inline bool UpdateDir(int itemId,int dir) {
-		int i=FindItem(itemId);
-		if (i==-1)
-			return false;
-		edgeList[i]=abs(edgeList[i])*dir;
+	inline bool RepairIds (vector<Edge> &data) {
+		int oldId;
+		for (int i = 0; i < edgeList.size(); i++) {
+			oldId = edgeList[i];
+			edgeList[i] = sgn (oldId) * data[abs (oldId) - 1].id;
+		}
 		return true;
 	}
-	inline int GetSign(int itemId) {
-		int i=FindItem(itemId);
-		if (i==-1)
+	inline bool UpdateDir (int itemId, int dir) {
+		int i = FindItem (itemId);
+		if (i == -1)
+			return false;
+		edgeList[i] = abs (edgeList[i]) * dir;
+		return true;
+	}
+	inline int GetSign (int itemId) {
+		int i = FindItem (itemId);
+		if (i == -1)
 			return 0;
-		return sgn(edgeList[i]);		
+		return sgn (edgeList[i]);
 	}
-	inline bool DeleteItem(int itemId) {
-		int i=FindItem(itemId);
-		if (i==-1)
+	inline bool DeleteItem (int itemId) {
+		int i = FindItem (itemId);
+		if (i == -1)
 			return false;
-		edgeList.erase(edgeList.begin()+i);
+		edgeList.erase (edgeList.begin() + i);
 		return true;
 	}
-	inline int FindItem(int itemId) {
-		for (int i=0;i<edgeList.size();i++) {
-			if (abs(edgeList[i])==abs(itemId)) {
+	inline int FindItem (int itemId) {
+		for (int i = 0; i < edgeList.size(); i++) {
+			if (abs (edgeList[i]) == abs (itemId)) {
 				return i;
-			}				
+			}
 		}
 		return -1;
 	}
@@ -220,18 +221,18 @@ public:
 class Volume
 {
 public:
-	int id=0;
+	int id = 0;
 	vector<int> surfaceList;
 	vector<double> center; //position of center of the volume
 	inline Volume (vector<string> &data, vector<int> &surfaceListMap) {
 		surfaceList.reserve (data.size() - 2);
 		for (int i = 2; i < data.size(); i++) {
 			int srf = stoi (data[i]);
-			if (abs(srf)>surfaceListMap.size())
-				throw out_of_range("Index out of range in Surface Loop section");
-			surfaceList.push_back (sgn(srf)*surfaceListMap[abs(srf) - 1]);
+			if (abs (srf) > surfaceListMap.size())
+				throw out_of_range ("Index out of range in Surface Loop section");
+			surfaceList.push_back (sgn (srf) *surfaceListMap[abs (srf) - 1]);
 		}
-		this->center=vector<double>(3,0);
+		this->center = vector<double> (3, 0);
 	}
 	inline Volume (vector<string> &data) {
 		surfaceList.reserve (data.size() - 2);
@@ -239,31 +240,31 @@ public:
 			int srf = stoi (data[i]);
 			surfaceList.push_back (srf);
 		}
-		this->center=vector<double>(3,0);
+		this->center = vector<double> (3, 0);
 	}
 	inline Volume () {};
-	inline bool DeleteItem(int itemId) {
-		bool del=false;
-		for (int i=0;i<surfaceList.size();i++) {
-			if (abs(surfaceList[i])==abs(itemId)) {
-				surfaceList.erase(surfaceList.begin()+i);
-				del=true;
+	inline bool DeleteItem (int itemId) {
+		bool del = false;
+		for (int i = 0; i < surfaceList.size(); i++) {
+			if (abs (surfaceList[i]) == abs (itemId)) {
+				surfaceList.erase (surfaceList.begin() + i);
+				del = true;
 				break;
-			}				
+			}
 		}
 		return del;
 	}
-	
-	inline bool RepairIds(vector<Surface> &data) {
-			int oldId;
-			for (int i=0;i<surfaceList.size();i++) {
-				oldId=surfaceList[i];
-				surfaceList[i]=sgn(oldId)*data[abs(oldId)-1].id;
-			}
-			return true;
+
+	inline bool RepairIds (vector<Surface> &data) {
+		int oldId;
+		for (int i = 0; i < surfaceList.size(); i++) {
+			oldId = surfaceList[i];
+			surfaceList[i] = sgn (oldId) * data[abs (oldId) - 1].id;
+		}
+		return true;
 	}
-	
-	
+
+
 };
 
 #endif

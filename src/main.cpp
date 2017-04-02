@@ -5,171 +5,103 @@
 #include <string>
 #include <sstream>
 #include <exception>
-
+#include <boost/program_options.hpp>
+#include <iterator>
 // Author: Jiri Kolar
 // May 2016
-
+//namespace po = boost::program_options;
 using namespace std;
-
-void arg_check (bool arg, string cmd)
-{
-	if (arg) throw invalid_argument ("Argument already set: " + cmd);
-}
+namespace po = boost::program_options;
 
 int main (int argc, char* argv[])
 {
 	try {
-		if (argc < 2) {
-			throw invalid_argument ("You need to specify at least input file by -i foam.geo or call generator etc. -g random");
+		po::options_description desc ("Allowed options");
+		desc.add_options()
+		("help,h", "produce help message")
+		("input-file,i", po::value<string>(), "input .geo file where information about foam structure is stored.")
+		("output-file,o", po::value<string>()->default_value ("foam"), "Output .fe file where output for Surface Evolver is stored (optional).")
+		("output-geo-file", po::value<string>()->implicit_value ("foam.geo"), "Generate also an output .geo file, after union for example (optional).")
+		("commands,c", po::value<string>(), "List of cmd files for evolver, separated by comma. Link to all files is added into resulting cmd file. (optional).")
+		("volume-union,u", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet (optional).")
+		("generate,g", po::value<string>()->implicit_value ("random"), "Generate foam structure as specified [cubic|random|hexab](optional).")
+		("num-cell,n", po::value<int>()->default_value (-1), "Number of generated cells, -1=auto-choose optimal value. (optional).")
+		("analyze,a", po::value<string>()->implicit_value ("foam.an"), "Analyze foam shape (optional).")
+		("threshold,t", po::value<float>()->default_value (1e-9), "Threshold of accuracy for mathematical operation (optional).")
+		;
+		// -p  // plot gnu plot graph NOT implemented
+
+		po::variables_map vm;
+		po::store (po::parse_command_line (argc, argv, desc), vm);
+		po::notify (vm);
+
+		if (vm.count ("help")) {
+			cout << desc << "\n";
+			return 0;
 		}
+		if (!vm.count ("input-file") && !vm.count ("generate")) {
+			cout << ("You have to to specify at least input file by -i foam.geo or call generator etc. -g random") << endl;
+			cout << ("\t Use --help for more information about usage") << endl;
+			return 0;
+		}
+		if (vm.count ("input-file") && vm.count ("generate")) {
+			cout << ("Can not read input-file and generate structure at same time. Choose one!") << endl;
+			return 0;
+		}
+
+		//call functions according to loaded cmds
+		Converter converter (vm["threshold"].as<float>());
 		bool dataLoaded = false;
-		bool storedFe = false;
-		bool storedCmd = false;
-		bool storedGeo = false;
 		string finName;
 		string foutFeName;
 		string foutCmdName;
 		string foutGeoName;
-		string gen;
-		string csvCmdfiles;
-		string foutGnuPlotName = "";
-		string foutAnName;
-		//cmd
-		bool g = false;
-		bool in = false;
-		bool o = false;
-		bool c = false;
-		bool n = false;
-		bool p = false;
-		bool u = false;
-		bool a = false;
-		string fileList;
-		string arg;
-		string cmd;
-		int ncell = 0;
-		int nvolpercell = 1;
-		//load control commands
-		//
-		// -c"file1.cmd,file2.cmd,file3.cmd" //load list of other cmd files, SE will pricess them normally
-		// -i foam.geo
-		// -u 9	//union of #number volumes in row, they have to share exactly one facet
-		// -g [cubic random hexab]
-		// -o foamSE (optional) // will make foamSE.fe and foamSE.cmd
-		//  -n 27 // number of cell in generation
-		// -p  // plot gnu plot graph NOT implemented
-		// -a // analyze foam shape
-		for (int i = 1; i < argc; i++) {
-			cmd = argv[i];
-			if (cmd[0] == '-') {
-				if (cmd.length() > 2) {
-					arg = cmd.substr (2, cmd.length() - 2);
-					cmd = cmd.substr (0, 2);
-				} else {
-					if (i < argc - 1) {
-						arg = argv[i + 1];
-					}
-					if (i >= argc - 1 || arg[0] == '-') {
-						throw invalid_argument ("Value missing after command: " + cmd);
-					}
-					i = i + 1;
-				}
-				if (cmd == "-g") {
-					arg_check (g, cmd);
-					g = true;
-					gen = arg;
-				} else if (cmd == "-i") {
-					arg_check (in, cmd);
-					in = true;
-					finName = arg;
-				} else if (cmd == "-o") {
-					arg_check (o, cmd);
-					o = true;
-					if (arg.substr (arg.length() - 3, 3) == ".fe") {
-						arg = arg.substr (0, arg.length() - 3);
-					}
-					foutFeName = arg + ".fe";
-					foutCmdName = arg + ".cmd";
-					foutGeoName = arg + ".geo";
-				} else if (cmd == "-c") {
-					arg_check (c, cmd);
-					c = true;
-					csvCmdfiles = arg;
-				} else if (cmd == "-n") {
-					arg_check (n, cmd);
-					ncell = stoi (arg);
-					n= true;
-				} else if (cmd == "-p") {
-					arg_check (p, cmd);
-					p = true;
-					foutGnuPlotName = arg;
-				} else if (cmd == "-u") {
-					arg_check (u, cmd);
-					u=true;
-					nvolpercell = stoi (arg);
-				} else if (cmd == "-a") {
-					arg_check (a, cmd);
-					a=true;
-					foutAnName = arg+".an";
-				} else {
-					cout << "Cmd was not recognised: " << cmd << endl;
-				}
-			}
-		}
 
-		//call functions according to loaded cmds
-		Converter converter;
-
-		if (in) {
-			ifstream finGeo (finName);
+		if (vm.count ("input-file")) {
+			ifstream finGeo (vm["input-file"].as<string>());
 			dataLoaded = converter.LoadGeo (finGeo);
 			finGeo.close();
-			if (p) {
-				ofstream foutGnuPlot (foutGnuPlotName);
-				bool saveGnu = converter.SaveGnuPlot (foutGnuPlot);
-			}
-		} else if (g) {
-			if (!n) ncell = -1;
-			dataLoaded = converter.Generate (gen, ncell, p, foutGnuPlotName);
+			//if (p) { // TO DO: gnuplot support not implemented
+			//	ofstream foutGnuPlot (foutGnuPlotName);
+			//	bool saveGnu = converter.SaveGnuPlot (foutGnuPlot);
+			//}
+		} else if (vm.count ("generate")) {
+			dataLoaded = converter.Generate (vm["generate"].as<string>(), vm["num-cell"].as<int>());
 		}
-		if (!o) {
-			foutGeoName = "foam.geo";
-			foutFeName = "foam.fe";
-			foutCmdName = "foam.cmd";
-		}
+		string foutName = vm["output-file"].as<string>();
+		if (foutName.substr (foutName.length() - 3, 3) == ".fe")
+			foutName = foutName.substr (0, foutName.length() - 3);
+		foutFeName = foutName + ".fe";
+		foutCmdName = foutName + ".cmd";
+
 		if (dataLoaded) {
-			
-			
-			
-			if (c) {
-				converter.LoadCmdFiles (csvCmdfiles);
+			if (vm.count ("commands")) {
+				//to do implement like a vector<string>
+				converter.LoadCmdFiles (vm["commands"].as<string>());
 			}
-			if (u) {
-				converter.MergeStructure(nvolpercell);			
+			if (vm.count ("volume-union")) {
+				converter.MergeStructure (vm["volume-union"].as<int>());
 			}
-			if (a) {
-				ofstream foutAn (foutAnName);
-				converter.AnalyzeCells(foutAn);
+			if (vm.count ("analyze")) {
+				ofstream foutAn (vm["analyze"].as<string>());
+				converter.AnalyzeCells (foutAn);
 			}
-			ofstream foutFe (foutFeName);
-			ofstream foutCmd (foutCmdName);
-			storedFe = converter.SaveFe (foutFe);
-			storedCmd = converter.SaveCmd (foutCmd);
-			foutFe.close();
-			foutCmd.close();
-			
-			if (u) {
+			if (vm.count ("output-geo-file")) {
+				foutGeoName = vm["output-geo-file"].as<string>();
 				ofstream foutGeo (foutGeoName);
-				storedGeo = converter.SaveGeo (foutGeo);
+				converter.SaveGeo (foutGeo);
 				foutGeo.close();
 			}
+
+			ofstream foutFe (foutFeName);
+			ofstream foutCmd (foutCmdName);
+			converter.SaveFe (foutFe);
+			converter.SaveCmd (foutCmd);
+			foutFe.close();
+			foutCmd.close();
 		}
-		cout << "Finished" << endl;
 	} catch (exception& e) {
-		if (string(e.what())=="stoi" || string(e.what())=="stod") {
-			cout << "Error, while parsing a number from input file: " << e.what() << endl;
-		}else{
-			cout << "An exception occurred: " << endl << e.what() << endl;
-		}
+		cout << "An exception occurred: " << endl << e.what() << endl;
 	}
 	return 0;
 }

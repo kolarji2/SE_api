@@ -5,3 +5,5 @@ set (CMAKE_CXX_FLAGS "-O3")
 file (GLOB _sources *.c*)
 add_executable(SE_api ${_sources})
 target_link_libraries(SE_api vorolibrary)
+target_link_libraries (SE_api boost_program_options)
+

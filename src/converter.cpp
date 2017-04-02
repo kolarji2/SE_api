@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Converter::Converter()
+Converter::Converter (float th)
 {
 	//init const
 	xmin = 0.0;
@@ -11,7 +11,7 @@ Converter::Converter()
 	xmax = 1.0;
 	ymax = xmax;
 	zmax = xmax;
-	threshold = 1e-7;
+	threshold = th;
 }
 
 bool Converter::AddVertex (Vertex v)
@@ -95,8 +95,8 @@ bool Converter::AddSurface (Surface s)
 void Converter::AddVolume (Volume v)
 {
 	bool volExist = false;
-	sort (v.surfaceList.begin(), v.surfaceList.end(),abscomp);
-	int  i=0;
+	sort (v.surfaceList.begin(), v.surfaceList.end(), abscomp);
+	int  i = 0;
 	for (i = 0; i < v.surfaceList.size(); i++) {
 		int result = CompareLists (v.surfaceList, volumeList[i].surfaceList);
 		if (result == 1 || result == -1) {
@@ -104,7 +104,7 @@ void Converter::AddVolume (Volume v)
 			break;
 		}
 	}
-	volumeListMap.push_back(i);
+	volumeListMap.push_back (i);
 	if (!volExist)	volumeList.push_back (v);
 }
 
@@ -134,11 +134,12 @@ int Converter::CompareLists (vector<int> &a, vector<int> &b)
 	return 0;
 }
 
-vector<double> Converter::FindVolCenter(vector<int> &faces) {
+vector<double> Converter::FindVolCenter (vector<int> &faces)
+{
 	vector<double> center;
 	//needs to know all vertices for one volume
-	
-	
+
+
 	return center;
 }
 
@@ -163,26 +164,27 @@ Wrapping Converter::GetWrapping (double p0, double p1, double min, double max)
 	return Wrapping::asterix;
 }
 
-WrappingCont Converter::ComputeAproxWrapping(Vertex &v0, Vertex &v1) {
-	double dx,dy,dz;
-	double th=0.6;
+WrappingCont Converter::ComputeAproxWrapping (Vertex &v0, Vertex &v1)
+{
+	double dx, dy, dz;
+	double th = 0.6;
 	WrappingCont  wcont;
-	
-	dx=v1.X-v0.X;
-	dy=v1.Y-v0.Y;
-	dz=v1.Z-v0.Z;
-	if (dx<-th)
-		wcont.x=Wrapping::plus;
-	else if(dx>th)
-		wcont.x=Wrapping::minus;
-	if (dy<-th)
-		wcont.y=Wrapping::plus;
-	else if(dy>th)
-		wcont.y=Wrapping::minus;
-	if (dz<-th)
-		wcont.z=Wrapping::plus;
-	else if(dz>th)
-		wcont.z=Wrapping::minus;
+
+	dx = v1.X - v0.X;
+	dy = v1.Y - v0.Y;
+	dz = v1.Z - v0.Z;
+	if (dx < -th)
+		wcont.x = Wrapping::plus;
+	else if (dx > th)
+		wcont.x = Wrapping::minus;
+	if (dy < -th)
+		wcont.y = Wrapping::plus;
+	else if (dy > th)
+		wcont.y = Wrapping::minus;
+	if (dz < -th)
+		wcont.z = Wrapping::plus;
+	else if (dz > th)
+		wcont.z = Wrapping::minus;
 	return wcont;
 }
 

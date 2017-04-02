@@ -12,15 +12,15 @@ sudo ./install_voro++.sh
 If that doesn't work, you will need to download it from
 http://math.lbl.gov/voro++/download/ and install it manually.
 
-##build
+## Build
 	cmake .
 	make
 
-##run
-	main -i PeriodicRVE.geo
-	main -g cubic
+## Run
+	SE_api -i foam_simple.geo
+	SE_api -g cubic
 
-##Description
+## Description
 	-i input.geo
 		Load file in geo format
 	-g random/cubic/hexab
@@ -35,12 +35,7 @@ http://math.lbl.gov/voro++/download/ and install it manually.
 		Specify name for output outputFile.fe and outputFile.cmd
 	-c file1.cmd,file2.cmd,file3.cmd
 		Comma separated list of cmd files which will be loaded in addition when surface evolver is run with output cmd file.
-	-p output.gnu
-		Plot the structure in gnuplot format, implemented only for generated structures
 
-#show input
-evolver PeriodicRVE.fe
-and inner cmd #s
-
-or in gnuplot:
-splot "output.gnu" with lines
+## Example
+	SE_api -i foam_simple.geo
+	evolver foam.fe

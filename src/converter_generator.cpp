@@ -8,7 +8,7 @@ double rnd()
 	return double (rand()) / RAND_MAX;
 }
 
-bool Converter::Generate (string gen, int ncell, bool p, string gnu_file)
+bool Converter::Generate (string gen, int ncell)
 {
 	/*
 	*Generate structure according to settings
@@ -66,12 +66,12 @@ bool Converter::Generate (string gen, int ncell, bool p, string gnu_file)
 		volumeList.push_back (Volume());
 	}
 
-	//generate Gnu PLot file
-	if (p) {
+	//generate Gnu PLot file *NOT IMPLEMENTED*
+	/*if (p) {
 		cout << "Generating output for GnuPlot..." << endl;
 		const char* cgnu_file = gnu_file.c_str();
 		con.draw_cells_gnuplot (cgnu_file);
-	}
+	}*/
 
 	c_loop_all cl (con);
 
@@ -219,7 +219,7 @@ void Converter::gen_hexab (vector<double> &centerx, vector<double> &centery, vec
 
 void Converter::gen_anhexab (vector<double> &centerx, vector<double> &centery, vector<double> &centerz, int ncell)
 {
-    	if (ncell == -1) ncell = 2;
+	if (ncell == -1) ncell = 2;
 	if (ncell % 2 == 1) ncell++;
 	double space = 1.0 / (ncell);
 	for (int i = 0; i < ncell; i++)
@@ -245,7 +245,7 @@ void Converter::gen_anhexab (vector<double> &centerx, vector<double> &centery, v
 				centerz.push_back (space / 4 + space * k);
 			}
 
-    for (int i = 0; i < ncell; i++) {
-            centerx[i]=centerx[i]*0.5;
-    }
+	for (int i = 0; i < ncell; i++) {
+		centerx[i] = centerx[i] * 0.5;
+	}
 }
