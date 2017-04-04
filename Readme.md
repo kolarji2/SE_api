@@ -12,13 +12,13 @@ sudo ./install_voro++.sh
 If that doesn't work, you will need to download it from
 http://math.lbl.gov/voro++/download/ and install it manually.
 
-## Build
+## Build and install
 	cmake .
 	make
-
+	cp se_api /usr/local/bin/se_api
 ## Run
-	SE_api -i foam_simple.geo
-	SE_api -g cubic
+	se_api -i foam_simple.geo
+	se_api -g cubic
 
 ## Description
 	-i input.geo
@@ -37,5 +37,5 @@ http://math.lbl.gov/voro++/download/ and install it manually.
 		Comma separated list of cmd files which will be loaded in addition when surface evolver is run with output cmd file.
 
 ## Example
-	SE_api -i foam_simple.geo
+	se_api -i foam_simple.geo
 	evolver foam.fe

@@ -101,8 +101,7 @@ public:
 		if (sa * sb > 0)
 			return a;
 		return Wrapping::asterix;
-	}
-
+	}	
 };
 
 class Vertex
@@ -125,6 +124,24 @@ public:
 		v[2] = this->Z;
 		return v;
 	}
+	inline vector<double> MoveByWrappingCont(WrappingCont &wc,double max) {
+		vector<double> mv(3);
+		mv[0]=MoveByWrapping(wc.x,this->X,max);
+		mv[1]=MoveByWrapping(wc.y,this->Y,max);
+		mv[2]=MoveByWrapping(wc.z,this->Z,max);
+		return mv;
+	}
+	
+	inline double MoveByWrapping(Wrapping &w,double p,double max) {
+		switch (w) {
+		case Wrapping::plus:
+			return p+max;
+		case Wrapping::minus:
+			return p-max;
+		default:
+			return p;
+		}		
+	}
 };
 
 class Edge
@@ -140,6 +157,7 @@ public:
 		this->V0 = v0;
 		this->V1 = v1;
 		this->wrappingCont = wc;
+		this->surfaceList.reserve(3);
 	}
 	inline bool Equal (Edge &e) {
 
@@ -153,7 +171,7 @@ public:
 			if (wrappingCont.EqualInv (e.wrappingCont)) return true;
 		}
 		return false;
-	}
+	}		
 };
 class Surface
 {
@@ -230,7 +248,7 @@ public:
 			int srf = stoi (data[i]);
 			if (abs (srf) > surfaceListMap.size())
 				throw out_of_range ("Index out of range in Surface Loop section");
-			surfaceList.push_back (sgn (srf) *surfaceListMap[abs (srf) - 1]);
+			surfaceList.push_back (sgn (srf) * surfaceListMap[abs (srf) - 1]);
 		}
 		this->center = vector<double> (3, 0);
 	}

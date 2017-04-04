@@ -4,16 +4,10 @@ using namespace std;
 
 bool Converter::MergeStructureRaw()
 {
-
-	cout << "Merging Raw surfaces..." << endl;
-	MergeSurfacesRaw();
-	cout << "Repairing numbering of surfaces..." << endl;
+	MergeSurfacesRaw();	
 	RepairIdsRaw();
-
 	// TODO
 	//dodelat merge edges
-
-
 	//cout << "Merging edges..." << endl;
 	//MergeEdges();
 	//cout << "Repairing numbering of edges..." << endl;
@@ -23,6 +17,7 @@ bool Converter::MergeStructureRaw()
 
 bool Converter::RepairIdsRaw()
 {
+	cout << "Repairing numbering of raw surfaces..." << endl;
 	//remove all unused entities and renumber
 	int i, j, k, id, v0I, v1I, surfI, edgeI;
 	//Raw
@@ -122,6 +117,7 @@ bool Converter::RepairIdsRaw()
 
 bool Converter::MergeSurfacesRaw()
 {
+	cout << "Merging Raw surfaces..." << endl;
 	int i, j, k, l, minSurfID, id0, id1;
 	vector<vector<int>> comm;
 	vector<vector<int>> raw0;

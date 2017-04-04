@@ -6,6 +6,7 @@
 #include <sstream>
 #include <exception>
 #include <boost/program_options.hpp>
+//#include <boost/program_options/value_semantic.hpp>
 #include <iterator>
 // Author: Jiri Kolar
 // May 2016
@@ -20,17 +21,20 @@ int main (int argc, char* argv[])
 		desc.add_options()
 		("help,h", "produce help message")
 		("input-file,i", po::value<string>(), "input .geo file where information about foam structure is stored.")
-		("output-file,o", po::value<string>()->default_value ("foam"), "Output .fe file where output for Surface Evolver is stored (optional).")
-		("output-geo-file", po::value<string>()->implicit_value ("foam.geo"), "Generate also an output .geo file, after union for example (optional).")
-		("commands,c", po::value<string>(), "List of cmd files for evolver, separated by comma. Link to all files is added into resulting cmd file. (optional).")
-		("volume-union,u", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet (optional).")
-		("generate,g", po::value<string>()->implicit_value ("random"), "Generate foam structure as specified [cubic|random|hexab](optional).")
-		("num-cell,n", po::value<int>()->default_value (-1), "Number of generated cells, -1=auto-choose optimal value. (optional).")
-		("analyze,a", po::value<string>()->implicit_value ("foam.an"), "Analyze foam shape (optional).")
-		("threshold,t", po::value<float>()->default_value (1e-9), "Threshold of accuracy for mathematical operation (optional).")
+		("output-file,o", po::value<string>()->default_value ("foam"), "Output .fe file where output for Surface Evolver is stored.")
+		("output-geo-file", po::value<string>(), "Generate also an output .geo file, after union for example.")
+		("commands,c", po::value<string>(), "List of cmd files for evolver, separated by comma. Link to all files is added into resulting cmd file.")
+		("all-union", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet, also unify surfaces and edges.")
+		("volume-union,u", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet.")
+		("surface-union,s", po::bool_switch(), "Union of surfaces that share at least one side,in way that each volume will have only one common surface. Unless volumes share more separated surfaces.")
+		("edge-union,e", po::bool_switch(), "Union of edges, that each surface will have only one common edge.")
+		("generate,g", po::value<string>(), "Generate foam structure as specified [cubic|random|hexab].")
+		("num-cell,n", po::value<int>()->default_value (-1), "Number of generated cells, -1=auto-choose optimal value.")
+		("analyze,a", po::value<string>(), "Analyze foam shape.")
+		("threshold,t", po::value<float>()->default_value (1e-9), "Threshold of accuracy for mathematical operation.")
 		;
 		// -p  // plot gnu plot graph NOT implemented
-
+		
 		po::variables_map vm;
 		po::store (po::parse_command_line (argc, argv, desc), vm);
 		po::notify (vm);
@@ -48,19 +52,15 @@ int main (int argc, char* argv[])
 			cout << ("Can not read input-file and generate structure at same time. Choose one!") << endl;
 			return 0;
 		}
-
+		
 		//call functions according to loaded cmds
 		Converter converter (vm["threshold"].as<float>());
 		bool dataLoaded = false;
-		string finName;
 		string foutFeName;
 		string foutCmdName;
-		string foutGeoName;
 
 		if (vm.count ("input-file")) {
-			ifstream finGeo (vm["input-file"].as<string>());
-			dataLoaded = converter.LoadGeo (finGeo);
-			finGeo.close();
+			dataLoaded = converter.LoadGeo (vm["input-file"].as<string>());			
 			//if (p) { // TO DO: gnuplot support not implemented
 			//	ofstream foutGnuPlot (foutGnuPlotName);
 			//	bool saveGnu = converter.SaveGnuPlot (foutGnuPlot);
@@ -68,37 +68,42 @@ int main (int argc, char* argv[])
 		} else if (vm.count ("generate")) {
 			dataLoaded = converter.Generate (vm["generate"].as<string>(), vm["num-cell"].as<int>());
 		}
-		string foutName = vm["output-file"].as<string>();
-		if (foutName.substr (foutName.length() - 3, 3) == ".fe")
-			foutName = foutName.substr (0, foutName.length() - 3);
-		foutFeName = foutName + ".fe";
-		foutCmdName = foutName + ".cmd";
-
 		if (dataLoaded) {
 			if (vm.count ("commands")) {
 				//to do implement like a vector<string>
 				converter.LoadCmdFiles (vm["commands"].as<string>());
 			}
-			if (vm.count ("volume-union")) {
-				converter.MergeStructure (vm["volume-union"].as<int>());
-			}
+			if (vm.count ("all-union")) {
+				if (vm.count ("output-geo-file"))
+					converter.MergeStructureRaw();
+				converter.MergeStructure (vm["all-union"].as<int>());
+			} else {
+				if (vm.count ("volume-union")) {
+					converter.MergeVolumes (vm["volume-union"].as<int>());
+					converter.RepairIds();
+				}
+				if (vm["surface-union"].as<bool>()) {
+					if (vm.count ("output-geo-file"))
+						converter.MergeStructureRaw();
+					converter.MergeSurfaces();
+					converter.RepairIds();
+				}
+				if (vm["edge-union"].as<bool>()) {			
+					converter.MergeEdges();
+					converter.RepairIds();
+				}
+			}			
 			if (vm.count ("analyze")) {
-				ofstream foutAn (vm["analyze"].as<string>());
-				converter.AnalyzeCells (foutAn);
+				converter.AnalyzeCells (vm["analyze"].as<string>());
 			}
 			if (vm.count ("output-geo-file")) {
-				foutGeoName = vm["output-geo-file"].as<string>();
-				ofstream foutGeo (foutGeoName);
-				converter.SaveGeo (foutGeo);
-				foutGeo.close();
+				converter.SaveGeo (vm["output-geo-file"].as<string>());
 			}
-
-			ofstream foutFe (foutFeName);
-			ofstream foutCmd (foutCmdName);
-			converter.SaveFe (foutFe);
-			converter.SaveCmd (foutCmd);
-			foutFe.close();
-			foutCmd.close();
+			string foutName = vm["output-file"].as<string>();
+			if (foutName.substr (foutName.length() - 3, 3) == ".fe")
+				foutName = foutName.substr (0, foutName.length() - 3);	
+			converter.SaveFe (foutName + ".fe");
+			converter.SaveCmd (foutName + ".cmd");
 		}
 	} catch (exception& e) {
 		cout << "An exception occurred: " << endl << e.what() << endl;

@@ -41,24 +41,30 @@ public:
 	Converter (float th);
 	// Main functions to control the program
 	//Load or generate data
-	bool LoadGeo (ifstream &fin);
+	bool LoadGeo (string file_name);
 	bool Generate (string gen, int ncell);
 	bool LoadCmdFiles (string csvCmdfiles);
 	//Save loaded data to output files
-	bool SaveFe (ofstream &fe_file);
-	bool SaveCmd (ofstream &cmd_file);
-	bool SaveGeo (ofstream &geo_file);
-	bool SaveGnuPlot (ofstream &gnu_file);
+	bool SaveFe (string file_name);
+	bool SaveCmd (string file_name);
+	bool SaveGeo (string file_name);
+	bool SaveGnuPlot (string file_name);
 	//Analyze structure, shape analysis
-	bool AnalyzeCells (ofstream &an_file);
-	bool SaveAnalysis (ofstream &an_file, vector<vector<int>> celltypes, double avgCell, double avgFacet);
+	bool AnalyzeCells (string file_name);
+	bool SaveAnalysis (string file_name, vector<vector<int>> celltypes, vector<vector<double>> vertex_angles,vector<double> edge_lengths, double avg_fperc, double avg_eperf, double avg_a, double vrc_a, double avg_e, double vrc_e);
+	vector<vector<double>> EvalVertexAngles(double &avg_a,double &vrc_a);
+	vector<double> EvalEdgeLength(double &avg_e,double &vrc_e);
 	vector<vector<int>> EvalCellTypes();
 	double AvgEdgesPerFacet (vector<vector<int>> celltypes);
 	double AvgFacetsPerCell (vector<vector<int>> celltypes);
 	// Manipulate with structure
 	bool MergeStructure (int nvolpercell);
 	bool MergeStructureRaw();
-
+	//Structure operation functions
+	bool MergeVolumes (int nvolpercell);
+	bool MergeSurfaces();
+	bool MergeEdges();
+	bool RepairIds();
 	//others
 	static inline bool abscomp (int a, int b) {
 		return abs (a) < abs (b);
@@ -93,10 +99,6 @@ private:
 		return a >= 0 ? a % b : (b - (-a) % b);
 	}
 	//Structure operation functions
-	bool MergeVolumes (int nvolpercell);
-	bool MergeSurfaces();
-	bool MergeEdges();
-	bool RepairIds();
 	vector<int> ListAbsUnion (vector<int> &a, vector<int> &b, bool considerDir);
 	vector<vector<int>> FindCommonItems (vector<int> &a, vector<int> &b);
 	vector<vector<int>> FindCommonItems (vector<int> &a, vector<int> &b, vector<int> &c);
@@ -119,8 +121,10 @@ private:
 	vector<double> FindVolCenter (vector<int> &faces);
 	vector<double> GetNormal (vector<int> &edges);
 	vector<double> GetVector (int edgeId);
+	vector<double> GetVector (int edgeId,int vId);
 	vector<double> VectorDiff (vector<double> v0, vector<double> v1);
 	vector<double> Cross (vector<double> v0, vector<double> v1);
+	double Dot (vector<double> v0, vector<double> v1);
 	vector<double> DivideByScalar (vector<double> v0, double s);
 	double Norm (vector<double> v0);
 	vector<double> MovePointByWrap (vector<double> p0, WrappingCont wcont);

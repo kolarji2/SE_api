@@ -4,7 +4,7 @@ using namespace std;
 //
 // INPUT
 //
-bool Converter::LoadGeo (ifstream &fin)
+bool Converter::LoadGeo (string file_name)
 {
 	/*
 	* Load .geo file to converter
@@ -18,11 +18,13 @@ bool Converter::LoadGeo (ifstream &fin)
 	int i = 0;
 	int id = 0;
 	float num;
+	ifstream fin (file_name);
+				
 	if (!fin.is_open()) {
 		cout << "Can not open input file." << endl;
 		return false;
 	}
-	cout << "Loading input file..." << endl;
+	cout << "Loading input geo file: "<< file_name << endl;
 	int nverts = 0;
 	int nedges = 0;
 	int nsurfs = 0;
@@ -65,14 +67,13 @@ bool Converter::LoadGeo (ifstream &fin)
 	volumeList.reserve (nvols);
 	volumeListRaw.reserve (nvols);
 	//loading structure
-	cout << "\tparsing lines..." << endl;
 	int percStep = 10;
 	int perc = 10;
 	int iline = 0;
 	while (getline (fin, line)) {
 		iline++;
 		if (ntot > 500000 && iline > perc * (ntot / 100)) {
-			cout << "\t\tCompleted: " << perc << " %" << endl;
+			cout << "\tCompleted: " << perc << " %" << endl;
 			perc += percStep;
 		}
 		//parsing line
@@ -114,8 +115,9 @@ bool Converter::LoadGeo (ifstream &fin)
 		}
 	}
 	for (int i = 0; i < surfaceListMap.size(); i++) {
-		surfaceList[surfaceListMap[i] - 1].mapRaw.push_back (i + 1);
+		surfaceList[abs(surfaceListMap[i]) - 1].mapRaw.push_back (i + 1);
 	}
+	fin.close();
 	return true;
 }
 
@@ -182,18 +184,20 @@ bool Converter::LoadCmdFiles (string csvCmdfiles)
 //	OUTPUT
 //
 
-bool Converter::SaveFe (ofstream &se_file)
+bool Converter::SaveFe (string file_name)
 {
 	//Generates input file for SurfaceEvolver
 	int i;
 	int j;
 	double f;
 	f = 1.0;
+	ofstream se_file (file_name);
+	
 	if (!se_file.is_open()) {
 		cout << "Can not open output file." << endl;
 		return false;
 	}
-	cout << "Generating output for Surface Evolver..." << endl;
+	cout << "Saving structure in Surface Evolver format to: " << file_name << endl;
 	se_file << "TORUS_FILLED" << endl << endl;
 	//constraint
 	//se_file << "quantity body_vol energy method facet_torus_volume" << endl;
@@ -227,7 +231,6 @@ bool Converter::SaveFe (ofstream &se_file)
 		se_file << endl;
 	}
 	se_file << endl << "bodies" << endl;
-
 	for (i = 0; i < volumeList.size(); i++) {
 		se_file << i + 1 << " ";
 		for (j = 0; j < volumeList[i].surfaceList.size(); j++) {
@@ -235,16 +238,18 @@ bool Converter::SaveFe (ofstream &se_file)
 		}
 		se_file << endl;
 	}
+	se_file.close();
 	return true;
 }
 
-bool Converter::SaveCmd (ofstream &cmd_file)
+bool Converter::SaveCmd (string file_name)
 {
+	ofstream cmd_file (file_name);
 	if (!cmd_file.is_open()) {
 		cout << "Can not open output cmd file." << endl;
 		return false;
 	}
-	cout << "Generating cmd file for Surface Evolver..." << endl;
+	cout << "Saving commands for Surface Evolver to: "<< file_name << endl;
 
 	//Other cmd files
 	for (int i = 0; i < cmdFiles.size(); i++) {
@@ -257,13 +262,15 @@ bool Converter::SaveCmd (ofstream &cmd_file)
 		cout << "\t" << cmdFiles[i] << " ...loaded" << endl;
 		cmd_file << "read \"" << cmdFiles[i] << "\"" << endl;
 	}
+	cmd_file.close();
 	return true;
 }
 
-bool Converter::SaveGeo (ofstream &geo_file)
+bool Converter::SaveGeo (string file_name)
 {
 	int i, j;
 	double f = 1.0;
+	ofstream geo_file (file_name);
 	if (!geo_file.is_open()) {
 		cout << "Can not open output geo file." << endl;
 		return false;
@@ -299,14 +306,15 @@ bool Converter::SaveGeo (ofstream &geo_file)
 		geo_file << volumeListRaw[i].surfaceList[j] << "};" << endl;
 		geo_file << "Volume (" << i + 1 << ") = {" << i + 1 << "};" << endl;
 	}
+	geo_file.close();
 	return true;
 }
 
 
 
-bool Converter::SaveGnuPlot (ofstream &gnu_file)
+bool Converter::SaveGnuPlot (string file_name)
 {
-	cout << "Generating output for GnuPlot...";
-	cout << " Not implemented for input files... Skipped" << endl;
+	//cout << "Generating output for GnuPlot...";
+	cout << "GnuPlot Not implemented for input files... Skipped" << endl;
 	return false;
 }

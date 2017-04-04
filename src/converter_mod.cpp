@@ -3,25 +3,18 @@
 using namespace std;
 
 bool Converter::MergeStructure (int nvolpercell)
-{
-
-	cout << "Merging volumes..." << endl;
-	MergeVolumes (nvolpercell);
-	cout << "Merging surfaces..." << endl;
-	if (nvolpercell <= 1)
-		MergeStructureRaw();
+{	
+	MergeVolumes (nvolpercell);	
 	MergeSurfaces();
-	cout << "Repairing numbering of surfaces and volumes..." << endl;
 	RepairIds();
-	cout << "Merging edges..." << endl;
-	MergeEdges();
-	cout << "Repairing numbering of edges..." << endl;
+	MergeEdges();	
 	RepairIds();
 	return true;
 }
 
 bool Converter::RepairIds()
 {
+	cout << "Repairing numbering ..." << endl;
 	//remove all unused entities and renumber
 	int i, j, k, id, v0I, v1I, surfI, edgeI;
 	//Unique
@@ -156,8 +149,9 @@ bool Converter::RepairOriVolume()
 
 bool Converter::MergeVolumes (int nvolpercell)
 {
+	cout << "Merging volumes..." << endl;
 	if (nvolpercell <= 1) {
-		cout << "Nothing to merge, skipping MergeVolumes!" << endl;
+		cout << "\tNothing to merge, skipping MergeVolumes!" << endl;
 		return false;
 	}
 	int i, j, k;
@@ -188,6 +182,7 @@ bool Converter::MergeVolumes (int nvolpercell)
 
 bool Converter::MergeSurfaces()
 {
+	cout << "Merging surfaces..." << endl;
 	int i, j, k, l, minSurfID;
 	vector<vector<int>> comm;
 	vector<int> mergedFace;
@@ -265,6 +260,7 @@ vector<int> Converter::MergeSurfacesFromList (vector<vector<int>> &comm, int &mi
 
 bool Converter::MergeEdges()
 {
+	cout << "Merging edges..." << endl;
 	// hledani trojic neni efektivni!
 	int i, j, k, edgeI;
 	vector<vector<int>> comm0;

@@ -39,6 +39,12 @@ vector<double> Converter::GetVector (int edgeId)
 	return res;
 }
 
+vector<double> Converter::GetVector (int edgeId,int vId) {
+	if (edgeList[abs (edgeId) - 1].V0==vId)
+		return GetVector (abs(edgeId));
+	return GetVector (-abs(edgeId));	
+}
+
 vector<double> Converter::MovePointByWrap (vector<double> p0, WrappingCont wcont)
 {
 	vector<double> res (3, 0.0);
@@ -66,6 +72,11 @@ vector<double> Converter::Cross (vector<double> v0, vector<double> v1)
 	res[1] = v0[2] * v1[0] - v0[0] * v1[2];
 	res[2] = v0[0] * v1[1] - v0[1] * v1[0];
 	return res;
+}
+
+double Converter::Dot (vector<double> v0, vector<double> v1)
+{
+	return v0[0]*v1[0]+v0[1]*v1[1]+v0[2]*v1[2];
 }
 
 vector<double> Converter::DivideByScalar (vector<double> v0, double s)
