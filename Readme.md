@@ -10,7 +10,7 @@ To install `voro++`:
 sudo ./install_voro++.sh
 ```
 If that doesn't work, you will need to download it from
-http://math.lbl.gov/voro++/download/ and install it manually.
+http://math.lbl.gov/voro++/download/ and install it manually, voro++ header files are expected in /usr/local/include/voro++ and library in /usr/local/lib/libvoro++.a, where are files installed by default.
 
 ## Build and install
 	cmake .
