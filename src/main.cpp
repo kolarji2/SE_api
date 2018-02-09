@@ -6,6 +6,7 @@
 #include <sstream>
 #include <exception>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 //#include <boost/program_options/value_semantic.hpp>
 #include <iterator>
 // Author: Jiri Kolar
@@ -13,6 +14,7 @@
 //namespace po = boost::program_options;
 using namespace std;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main (int argc, char* argv[])
 {
@@ -20,18 +22,19 @@ int main (int argc, char* argv[])
 		po::options_description desc ("Allowed options");
 		desc.add_options()
 		("help,h", "produce help message")
-		("input-file,i", po::value<string>(), "input .geo file where information about foam structure is stored.")
+		("input-file,i", po::value<string>(), "input .geo or .fe file where information about foam structure is stored.")
 		("output-file,o", po::value<string>()->default_value ("foam"), "Output .fe file where output for Surface Evolver is stored.")
 		("output-geo-file", po::value<string>(), "Generate also an output .geo file, after union for example.")
 		("commands,c", po::value<string>(), "List of cmd files for evolver, separated by comma. Link to all files is added into resulting cmd file.")
 		("all-union", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet, also unify surfaces and edges.")
-		("volume-union,u", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet.")
+		("volume-union,v", po::value<int>(), "Union of specified number of volumes, they have to share exactly one facet.")
 		("surface-union,s", po::bool_switch(), "Union of surfaces that share at least one side,in way that each volume will have only one common surface. Unless volumes share more separated surfaces.")
 		("edge-union,e", po::bool_switch(), "Union of edges, that each surface will have only one common edge.")
 		("generate,g", po::value<string>(), "Generate foam structure as specified [cubic|random|hexab].")
 		("num-cell,n", po::value<int>()->default_value (-1), "Number of generated cells, -1=auto-choose optimal value.")
 		("analyze,a", po::value<string>(), "Analyze foam shape.")
 		("threshold,t", po::value<float>()->default_value (1e-9), "Threshold of accuracy for mathematical operation.")
+		("scalex,x", po::value<float>()->default_value (1.0), "Scale parameter for x axis deformation.")
 		;
 		// -p  // plot gnu plot graph NOT implemented
 		
@@ -55,12 +58,23 @@ int main (int argc, char* argv[])
 		
 		//call functions according to loaded cmds
 		Converter converter (vm["threshold"].as<float>());
+		converter.scalex=vm["scalex"].as<float>();
 		bool dataLoaded = false;
 		string foutFeName;
 		string foutCmdName;
+		string inputfile;
+		string inputFileExt;
 
 		if (vm.count ("input-file")) {
-			dataLoaded = converter.LoadGeo (vm["input-file"].as<string>());			
+			inputfile=vm["input-file"].as<string>();
+			inputFileExt=fs::path(inputfile).extension().string();
+			if (inputFileExt==".geo")
+				dataLoaded = converter.LoadGeo (inputfile);
+			else if (inputFileExt==".fe")
+				dataLoaded = converter.LoadFe (inputfile);
+			else
+				cout << "Unsupported input file format!" << endl;
+						
 			//if (p) { // TO DO: gnuplot support not implemented
 			//	ofstream foutGnuPlot (foutGnuPlotName);
 			//	bool saveGnu = converter.SaveGnuPlot (foutGnuPlot);
@@ -101,7 +115,7 @@ int main (int argc, char* argv[])
 			}
 			string foutName = vm["output-file"].as<string>();
 			if (foutName.substr (foutName.length() - 3, 3) == ".fe")
-				foutName = foutName.substr (0, foutName.length() - 3);	
+				foutName = foutName.substr (0, foutName.length() - 3);
 			converter.SaveFe (foutName + ".fe");
 			converter.SaveCmd (foutName + ".cmd");
 		}

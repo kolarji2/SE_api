@@ -37,11 +37,12 @@ public:
 	vector<Surface> surfaceList;
 	vector<Edge> edgeList;
 	vector<Vertex> vertexListUnique; //  only unique vertices
-
+	float scalex=1.0;
 	Converter (float th);
 	// Main functions to control the program
 	//Load or generate data
 	bool LoadGeo (string file_name);
+	bool LoadFe (string file_name);
 	bool Generate (string gen, int ncell);
 	bool LoadCmdFiles (string csvCmdfiles);
 	//Save loaded data to output files
@@ -83,6 +84,7 @@ private:
 	void AddVolume (Volume v);
 	//Parsing
 	vector<string> ParseLnGeo (string line);
+	vector<string> ParseLnFe (string line);
 	//generate structure
 	void gen_random (vector<double> &centerx, vector<double> &centery, vector<double> &centerz, int ncell);
 	void gen_cubic (vector<double> &centerx, vector<double> &centery, vector<double> &centerz, int ncell);

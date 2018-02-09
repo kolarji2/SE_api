@@ -6,4 +6,5 @@ file (GLOB _sources *.c*)
 add_executable(se_api ${_sources})
 target_link_libraries(se_api vorolibrary)
 target_link_libraries (se_api boost_program_options)
-
+target_link_libraries (se_api boost_system)
+target_link_libraries (se_api boost_filesystem)

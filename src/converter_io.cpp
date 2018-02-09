@@ -121,6 +121,90 @@ bool Converter::LoadGeo (string file_name)
 	return true;
 }
 
+bool Converter::LoadFe (string file_name) {
+	/*
+	* Load .geo file to converter
+	* Makes it periodic and transform to local data structure
+	*/
+
+	string line;
+	string val;
+	vector<string> sl;
+
+	int i = 0;
+	int id = 0;
+	float num;
+	ifstream fin (file_name);
+				
+	if (!fin.is_open()) {
+		cout << "Can not open input file." << endl;
+		return false;
+	}
+	cout << "Loading input fe file: "<< file_name << endl;
+	int nverts = 0;
+	int nedges = 0;
+	int nsurfs = 0;
+	int nvols = 0;
+	int ntot = 0;
+	//Get number of entities
+	auto const start_pos = fin.tellg();
+	while (getline (fin, line)) {
+		sl = ParseLnFe (line);
+		if (sl.size() > 0) {
+			if (sl[0] == "Point") {
+				nverts++;
+			} else if (sl[0] == "Line") {
+				nedges++;
+			} else if (sl[0] == "Line Loop") {
+				nsurfs++;
+			} else if (sl[0] == "Surface Loop") {
+				nvols++;
+			}
+			ntot++;
+		}
+	}
+	fin.clear();
+	fin.seekg (start_pos);
+
+	//allocate memory
+	//points
+	vertexListUnique.reserve (nverts);
+	vertexListRaw.reserve (nverts);
+	vertexListMapping.reserve (nverts);
+	//edges
+	edgeList.reserve (nedges);
+	edgeListRaw.reserve (nedges);
+	edgeListMap.reserve (nedges);
+	//surfaces
+	surfaceList.reserve (nsurfs);
+	surfaceListRaw.reserve (nsurfs);
+	surfaceListMap.reserve (nsurfs);
+	//volumes
+	volumeList.reserve (nvols);
+	volumeListRaw.reserve (nvols);
+	//loading structure
+	int percStep = 10;
+	int perc = 10;
+	int iline = 0;
+	while (getline (fin, line)) {
+		iline++;
+		if (ntot > 500000 && iline > perc * (ntot / 100)) {
+			cout << "\tCompleted: " << perc << " %" << endl;
+			perc += percStep;
+		}
+		//parsing line
+		sl = ParseLnFe (line);
+	}
+	fin.close();
+	return false;
+	}
+
+vector<string> Converter::ParseLnFe (string line)
+{
+	vector<string> strVec;
+	return strVec;
+}
+
 vector<string> Converter::ParseLnGeo (string line)
 {
 	//Parse line from .geo file
@@ -189,8 +273,7 @@ bool Converter::SaveFe (string file_name)
 	//Generates input file for SurfaceEvolver
 	int i;
 	int j;
-	double f;
-	f = 1.0;
+	double f=scalex;
 	ofstream se_file (file_name);
 	
 	if (!se_file.is_open()) {
@@ -208,13 +291,13 @@ bool Converter::SaveFe (string file_name)
 	se_file << "0.000000 " << ymax << " 0.000000" << endl;
 	se_file << "0.000000 0.000000 " << zmax << endl;
 
-	se_file << "define vertex attribute angle real" << endl;
-	se_file << "define vertex attribute uid integer" << endl;
+	//se_file << "define vertex attribute angle real" << endl;
+	//se_file << "define vertex attribute uid integer" << endl;
 	//se_file << "constraint 1" << endl;
 	//se_file << "formula: angle=109.47" << endl;
 	se_file << endl << "vertices" << endl;
 	for (i = 0; i < vertexListUnique.size(); i++) {
-		se_file << i + 1 << " " << vertexListUnique[i].X*f << " " << vertexListUnique[i].Y << " " << vertexListUnique[i].Z << " angle 100 uid " << i + 1 << endl;
+		se_file << i + 1 << " " << vertexListUnique[i].X*f << " " << vertexListUnique[i].Y << " " << vertexListUnique[i].Z << endl;
 	}
 
 	se_file << endl << "edges" << endl;
@@ -269,7 +352,7 @@ bool Converter::SaveCmd (string file_name)
 bool Converter::SaveGeo (string file_name)
 {
 	int i, j;
-	double f = 1.0;
+	double f = scalex;
 	ofstream geo_file (file_name);
 	if (!geo_file.is_open()) {
 		cout << "Can not open output geo file." << endl;

@@ -142,11 +142,6 @@ bool Converter::RepairOriVolume()
 	return true;
 }
 
-
-
-
-
-
 bool Converter::MergeVolumes (int nvolpercell)
 {
 	cout << "Merging volumes..." << endl;
@@ -458,6 +453,7 @@ vector<vector<int>> Converter::FindCommonItems (vector<int> &a, vector<int> &b)
 //find common items in list and their position
 //minimal first
 	vector<vector<int>> comm;
+	comm.reserve((a.size()+b.size())/2);
 	int i, j;
 	for (i = 0; i < a.size(); i++) {
 		for (j = 0; j < b.size(); j++) {
@@ -480,6 +476,7 @@ vector<vector<int>> Converter::FindCommonItems (vector<int> &a, vector<int> &b, 
 	vector<vector<int>> comm0;
 	vector<vector<int>> comm1;
 	vector<vector<int>> comm2;
+	comm2.reserve((a.size()+b.size()+c.size())/3);
 	comm0 = FindCommonItems (a, b);
 	comm1 = FindCommonItems (a, c);
 	for (i = 0; i < comm0.size(); i++) {
