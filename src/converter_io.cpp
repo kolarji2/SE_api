@@ -282,14 +282,17 @@ bool Converter::SaveFe (string file_name)
 	}
 	cout << "Saving structure in Surface Evolver format to: " << file_name << endl;
 	se_file << "TORUS_FILLED" << endl << endl;
+	se_file << " parameter period_x = "<< xmax*f <<  endl;
+	se_file << " parameter period_y = "<< ymax <<  endl;
+	se_file << " parameter period_z = "<< zmax <<  endl;
 	//constraint
 	//se_file << "quantity body_vol energy method facet_torus_volume" << endl;
 	//se_file <<"SYMMETRIC_CONTENT" <<  endl;
 	//se_file << "PHASEFILE \"foam.phase\"" << endl;
 	se_file << "periods" << endl;
-	se_file << xmax*f <<  " 0.000000 0.000000" << endl;
-	se_file << "0.000000 " << ymax << " 0.000000" << endl;
-	se_file << "0.000000 0.000000 " << zmax << endl;
+	se_file << "period_x 0.000000 0.000000" << endl;
+	se_file << "0.000000 period_y 0.000000" << endl;
+	se_file << "0.000000 0.000000 period_z" << endl;
 
 	//se_file << "define vertex attribute angle real" << endl;
 	//se_file << "define vertex attribute uid integer" << endl;
