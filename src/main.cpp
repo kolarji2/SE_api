@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <iomanip> 
 #include <exception>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -33,15 +34,17 @@ int main (int argc, char* argv[])
 		("generate,g", po::value<string>(), "Generate foam structure as specified [cubic|random|hexab].")
 		("num-cell,n", po::value<int>()->default_value (-1), "Number of generated cells, -1=auto-choose optimal value.")
 		("analyze,a", po::value<string>(), "Analyze foam shape.")
-		("threshold,t", po::value<float>()->default_value (1e-9), "Threshold of accuracy for mathematical operation.")
+		("threshold,t", po::value<float>()->default_value (1e-6), "Threshold of accuracy for mathematical operation.")
 		("scalex,x", po::value<float>()->default_value (1.0), "Scale parameter for x axis deformation.")
+		("box-size", po::value<std::vector<float> >()->multitoken(), "Box size in format: [0.8 1.0 1.0]")
+		("noperiodicity", po::bool_switch(), "No periodicity of input file.")
 		;
 		// -p  // plot gnu plot graph NOT implemented
 		
 		po::variables_map vm;
 		po::store (po::parse_command_line (argc, argv, desc), vm);
 		po::notify (vm);
-
+				
 		if (vm.count ("help")) {
 			cout << desc << "\n";
 			return 0;
@@ -56,9 +59,22 @@ int main (int argc, char* argv[])
 			return 0;
 		}
 		
+		vector<float> box_size;		
+		if (vm["box-size"].empty()) {
+			//default box-size
+			box_size=vector<float>(3,1);
+		} else {
+			box_size=vm["box-size"].as<vector<float>>();
+			if (box_size.size()!=3) {
+				cout << "Input box-size need exactly 3 arguments e.g. --box-size 1 1 1" <<endl;
+				return 0;
+				}
+		}			
 		//call functions according to loaded cmds
-		Converter converter (vm["threshold"].as<float>());
+		Converter converter (vm["threshold"].as<float>(),box_size);
 		converter.scalex=vm["scalex"].as<float>();
+		if (vm["noperiodicity"].as<bool>())
+			converter.periodic=false;
 		bool dataLoaded = false;
 		string foutFeName;
 		string foutCmdName;
@@ -87,7 +103,7 @@ int main (int argc, char* argv[])
 				//to do implement like a vector<string>
 				converter.LoadCmdFiles (vm["commands"].as<string>());
 			}
-			if (vm.count ("all-union")) {
+			if (vm.count ("all-union") && vm["all-union"].as<int>()>1) {
 				if (vm.count ("output-geo-file"))
 					converter.MergeStructureRaw();
 				converter.MergeStructure (vm["all-union"].as<int>());

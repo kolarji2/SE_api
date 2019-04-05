@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include <iomanip> 
 #include "voro++.hh"
 #include "structure.hpp"
 
@@ -31,6 +32,11 @@ private:
 	vector<string> cmdFiles;
 	//box size
 	double xmin, xmax, ymin, ymax, zmin, zmax, threshold;
+	//offset
+	int vert_offset=1;
+	int edge_offset=1;
+	int surf_offset=1;
+	int vol_offset=1;
 public:
 	//Public data structures (recommendation:read only)
 	vector<Volume> volumeList;
@@ -38,7 +44,8 @@ public:
 	vector<Edge> edgeList;
 	vector<Vertex> vertexListUnique; //  only unique vertices
 	float scalex=1.0;
-	Converter (float th);
+	bool periodic=true;
+	Converter (float th,vector<float> box_size);
 	// Main functions to control the program
 	//Load or generate data
 	bool LoadGeo (string file_name);
@@ -134,6 +141,9 @@ private:
 	void printV (vector<int> &a);
 	void printV (vector<double> &a);
 	void printV (vector<vector<int>> &a);
+	// output internal functions
+	void PrintHeaderTorus (ofstream &se_file);
+	void PrintHeaderEmpty (ofstream &se_file);
 };
 
 

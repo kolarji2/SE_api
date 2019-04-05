@@ -111,6 +111,7 @@ bool Converter::RepairIdsRaw()
 	vertexListRaw.swap (newVertListRaw);
 	edgeListRaw.swap (newEdgeListRaw);
 	surfaceListRaw.swap (newSurfaceListRaw);
+	return true;
 }
 
 

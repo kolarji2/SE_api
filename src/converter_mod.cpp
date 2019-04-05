@@ -109,6 +109,8 @@ bool Converter::RepairIds()
 	vertexListUnique.swap (newVertList);
 	edgeList.swap (newEdgeList);
 	surfaceList.swap (newSurfaceList);
+	
+	return true;
 }
 
 

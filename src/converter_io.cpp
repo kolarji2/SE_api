@@ -81,32 +81,44 @@ bool Converter::LoadGeo (string file_name)
 		if (sl.size() > 0) {
 			if (sl[0] == "Point") {
 				if (sl.size() < 5) throw length_error ("Error in input file: section Point");
-				if (stoi (sl[1]) != vertexListRaw.size() + 1) throw length_error ("Inconsistent order of in section Point");
+				if (stoi(sl[1]) ==0)
+					vert_offset=0;
+				if (stoi (sl[1]) != vertexListRaw.size() + vert_offset) throw length_error ("Inconsistent order of in section Point");
 				Vertex v (stod (sl[2]), stod (sl[3]), stod (sl[4]));
 				AddVertex (v);
 			} else if (sl[0] == "Line") {
 				if (sl.size() < 4) throw length_error ("Error in input file: section Line");
-				int v0 = stoi (sl[2]) - 1;
-				int v1 = stoi (sl[3]) - 1;
+				if (stoi(sl[1]) ==0)
+					edge_offset=0;
+				int v0 = stoi (sl[2]) - vert_offset;
+				int v1 = stoi (sl[3]) - vert_offset;
 				if (v0 < 0 || v1 < 0 || v0 >= vertexListRaw.size() || v1 >= vertexListRaw.size())
 					throw out_of_range ("Index of vertex out of range");
-				WrappingCont wrappingCont = ComputeWrappingCont (v0, v1);
-				Edge eRaw (v0 + 1, v1 + 1, WrappingCont());
+				
+				WrappingCont wrappingCont= WrappingCont();
+				if (periodic)
+					wrappingCont = ComputeWrappingCont (v0, v1);
+									
+				Edge eRaw (v0 + vert_offset, v1 + vert_offset, WrappingCont());
 				edgeListRaw.push_back (eRaw);
-				v0 = vertexListMapping[v0] + 1;
-				v1 = vertexListMapping[v1] + 1;
+				v0 = vertexListMapping[v0] + vert_offset;
+				v1 = vertexListMapping[v1] + vert_offset;
 				Edge e (v0, v1, wrappingCont);
 				AddEdge (e);
 			} else if (sl[0] == "Line Loop") {
 				if (sl.size() - 2 <= 0) throw length_error ("Error in Line Loop section");
-				if (stoi (sl[1]) != surfaceListMap.size() + 1) throw length_error ("Inconsistent order of in section Line Loop");
+				if (stoi(sl[1]) ==0)
+					surf_offset=0;
+				if (stoi (sl[1]) != surfaceListMap.size() + surf_offset) throw length_error ("Inconsistent order of in section Line Loop");
 				Surface srfRaw (sl);
 				surfaceListRaw.push_back (srfRaw);
 				Surface srf (sl, edgeListMap);
 				AddSurface (srf);
 			} else if (sl[0] == "Surface Loop") {
 				if (sl.size() - 2 <= 0) throw length_error ("Error in Surface Loop section");
-				if (stoi (sl[1]) != volumeListMap.size() + 1) throw length_error ("Inconsistent order of in section Surface Loop");
+				if (stoi(sl[1]) ==0)
+					vol_offset=0;
+				if (stoi (sl[1]) != volumeListMap.size() + vol_offset) throw length_error ("Inconsistent order of in section Surface Loop");
 				Volume volRaw (sl);
 				volumeListRaw.push_back (volRaw);
 				Volume vol (sl, surfaceListMap);
@@ -123,7 +135,7 @@ bool Converter::LoadGeo (string file_name)
 
 bool Converter::LoadFe (string file_name) {
 	/*
-	* Load .geo file to converter
+	* Load .fe file to converter
 	* Makes it periodic and transform to local data structure
 	*/
 
@@ -261,12 +273,32 @@ bool Converter::LoadCmdFiles (string csvCmdfiles)
 			iprev = i + 1;
 		}
 	}
-
+	return true;
 }
 
 //
 //	OUTPUT
 //
+void Converter::PrintHeaderTorus (ofstream &se_file) {
+	double f=scalex;
+	se_file << "TORUS_FILLED" << endl << endl;
+	se_file << " parameter period_x = "<< xmax*f <<  endl;
+	se_file << " parameter period_y = "<< ymax <<  endl;
+	se_file << " parameter period_z = "<< zmax <<  endl;
+	//constraint
+	//se_file << "quantity body_vol energy method facet_torus_volume" << endl;
+	//se_file <<"SYMMETRIC_CONTENT" <<  endl;
+	//se_file << "PHASEFILE \"foam.phase\"" << endl;
+	se_file << "periods" << endl;
+	se_file << "period_x 0.000000 0.000000" << endl;
+	se_file << "0.000000 period_y 0.000000" << endl;
+	se_file << "0.000000 0.000000 period_z" << endl;
+	
+}
+
+void Converter::PrintHeaderEmpty (ofstream &se_file) {
+	
+}
 
 bool Converter::SaveFe (string file_name)
 {
@@ -281,18 +313,10 @@ bool Converter::SaveFe (string file_name)
 		return false;
 	}
 	cout << "Saving structure in Surface Evolver format to: " << file_name << endl;
-	se_file << "TORUS_FILLED" << endl << endl;
-	se_file << " parameter period_x = "<< xmax*f <<  endl;
-	se_file << " parameter period_y = "<< ymax <<  endl;
-	se_file << " parameter period_z = "<< zmax <<  endl;
-	//constraint
-	//se_file << "quantity body_vol energy method facet_torus_volume" << endl;
-	//se_file <<"SYMMETRIC_CONTENT" <<  endl;
-	//se_file << "PHASEFILE \"foam.phase\"" << endl;
-	se_file << "periods" << endl;
-	se_file << "period_x 0.000000 0.000000" << endl;
-	se_file << "0.000000 period_y 0.000000" << endl;
-	se_file << "0.000000 0.000000 period_z" << endl;
+	if (periodic)
+		PrintHeaderTorus(se_file);
+	else
+		PrintHeaderEmpty(se_file);
 
 	//se_file << "define vertex attribute angle real" << endl;
 	//se_file << "define vertex attribute uid integer" << endl;
@@ -300,12 +324,15 @@ bool Converter::SaveFe (string file_name)
 	//se_file << "formula: angle=109.47" << endl;
 	se_file << endl << "vertices" << endl;
 	for (i = 0; i < vertexListUnique.size(); i++) {
-		se_file << i + 1 << " " << vertexListUnique[i].X*f << " " << vertexListUnique[i].Y << " " << vertexListUnique[i].Z << endl;
+		se_file << i + 1 << setprecision(17) << " " << vertexListUnique[i].X*f << " " << vertexListUnique[i].Y << " " << vertexListUnique[i].Z << endl;
 	}
 
 	se_file << endl << "edges" << endl;
 	for (i = 0; i < edgeList.size(); i++) {
-		se_file << i + 1 << " " << edgeList[i].V0 << " " << edgeList[i].V1 << " " << edgeList[i].wrappingCont.ToString() << endl;
+		se_file << i + 1 << " " << edgeList[i].V0 + (1-vert_offset) << " " << edgeList[i].V1+(1-vert_offset);
+		if (periodic)
+			se_file << " " << edgeList[i].wrappingCont.ToString();
+		se_file <<  endl;
 	}
 
 	se_file << endl << "faces" << endl;

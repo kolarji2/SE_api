@@ -15,7 +15,7 @@ http://math.lbl.gov/voro++/download/ and install it manually, voro++ header file
 ## Build and install
 	cmake .
 	make
-	cp se_api /usr/local/bin/se_api
+	sudo make install
 ## Run
 	se_api -i foam_simple.geo
 	se_api -g cubic

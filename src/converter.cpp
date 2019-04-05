@@ -2,15 +2,15 @@
 
 using namespace std;
 
-Converter::Converter (float th)
+Converter::Converter (float th,vector<float> box_size)
 {
 	//init const
 	xmin = 0.0;
 	ymin = xmin;
 	zmin = xmin;
-	xmax = 1.0;
-	ymax = xmax;
-	zmax = xmax;
+	xmax = box_size[0];
+	ymax = box_size[1];
+	zmax = box_size[2];
 	threshold = th;
 }
 
@@ -19,15 +19,17 @@ bool Converter::AddVertex (Vertex v)
 	vertexListRaw.push_back (v);
 	bool vertExist = false;
 	int i = 0;
+	if (periodic) {
 	//check if added vertex is already in list if is outside the box
 
-	//correction, to place vertex inside the box
-	if (v.X < xmin) v.X = v.X + xmax;
-	if (v.X > xmax) v.X = v.X - xmax;
-	if (v.Y < ymin) v.Y = v.Y + ymax;
-	if (v.Y > ymax) v.Y = v.Y - ymax;
-	if (v.Z < zmin) v.Z = v.Z + zmax;
-	if (v.Z > zmax) v.Z = v.Z - zmax;
+		//correction, to place vertex inside the box
+		if (v.X < xmin) v.X = v.X + xmax;
+		if (v.X > xmax) v.X = v.X - xmax;
+		if (v.Y < ymin) v.Y = v.Y + ymax;
+		if (v.Y > ymax) v.Y = v.Y - ymax;
+		if (v.Z < zmin) v.Z = v.Z + zmax;
+		if (v.Z > zmax) v.Z = v.Z - zmax;
+	}
 	//find if there already exists same vertex;
 	vertExist = false;
 	for (i = 0; i < vertexListUnique.size(); i++) {
@@ -40,6 +42,8 @@ bool Converter::AddVertex (Vertex v)
 		}
 	}
 	vertexListMapping.push_back (i);
+
+	
 	if (!vertExist) {
 		vertexListUnique.push_back (v);
 		return true;
@@ -50,6 +54,7 @@ bool Converter::AddEdge (Edge e)
 {
 	int id = 1;
 	bool edgeExist = false;
+
 	for (int i = 0; i < edgeList.size(); i++) {
 		Edge *eOld = &edgeList[i];
 		if (eOld->Equal (e)) {
@@ -63,6 +68,7 @@ bool Converter::AddEdge (Edge e)
 		}
 		id++;
 	}
+
 	edgeListMap.push_back (id);
 	if (!edgeExist) {
 		edgeList.push_back (e);
@@ -75,15 +81,17 @@ bool Converter::AddSurface (Surface s)
 {
 	int id = 1;
 	bool surfExist = false;
-	for (int i = 0; i < surfaceList.size(); i++) {
-		int result = CompareLists (s.edgeList, surfaceList[i].edgeList);
-		if (result == 1 || result == -1) {
-			id = id * result;
-			surfExist = true;
-			break;
+
+		for (int i = 0; i < surfaceList.size(); i++) {
+			int result = CompareLists (s.edgeList, surfaceList[i].edgeList);
+			if (result == 1 || result == -1) {
+				id = id * result;
+				surfExist = true;
+				break;
+			}
+			id++;
 		}
-		id++;
-	}
+
 	surfaceListMap.push_back (id);
 	if (!surfExist) {
 		surfaceList.push_back (s);
@@ -173,17 +181,17 @@ WrappingCont Converter::ComputeAproxWrapping (Vertex &v0, Vertex &v1)
 	dx = v1.X - v0.X;
 	dy = v1.Y - v0.Y;
 	dz = v1.Z - v0.Z;
-	if (dx < -th)
+	if (dx < -th*xmax)
 		wcont.x = Wrapping::plus;
-	else if (dx > th)
+	else if (dx > th*xmax)
 		wcont.x = Wrapping::minus;
-	if (dy < -th)
+	if (dy < -th*ymax)
 		wcont.y = Wrapping::plus;
-	else if (dy > th)
+	else if (dy > th*ymax)
 		wcont.y = Wrapping::minus;
-	if (dz < -th)
+	if (dz < -th*zmax)
 		wcont.z = Wrapping::plus;
-	else if (dz > th)
+	else if (dz > th*zmax)
 		wcont.z = Wrapping::minus;
 	return wcont;
 }
